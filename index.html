@@ -8,7 +8,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             background-color: #000;
             color: white;
             display: flex;
@@ -19,17 +19,34 @@
         }
         #gameCanvas {
             background: #000;
+            display: none;
         }
-        #nicknameScreen, #victoryScreen {
+        #nicknameScreen, #victoryScreen, #lostScreen {
             display: none;
             text-align: center;
+        }
+        #nicknameScreen h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        #nicknameInput {
+            padding: 10px;
+            font-size: 18px;
+            width: 200px;
+            margin-bottom: 20px;
+        }
+        #nicknameScreen button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
         }
         #message {
             position: absolute;
             bottom: 10px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 16px;
+            font-size: 24px;
+            color: #00ff00;
         }
         #timer {
             position: absolute;
@@ -37,6 +54,24 @@
             left: 50%;
             transform: translateX(-50%);
             font-size: 24px;
+            color: #ff0000;
+        }
+        #victoryScreen, #lostScreen {
+            display: none;
+            text-align: center;
+        }
+        #victoryScreen p, #lostScreen p {
+            font-size: 36px;
+            margin: 20px 0;
+        }
+        #victoryScreen button, #lostScreen button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        #developedBy {
+            font-size: 18px;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -45,6 +80,7 @@
         <h1>Enter your nickname:</h1>
         <input type="text" id="nicknameInput" placeholder="Nickname">
         <button onclick="startGame()">Start Game</button>
+        <div id="developedBy">Developed By Kavya</div>
     </div>
     <canvas id="gameCanvas"></canvas>
     <div id="message"></div>
@@ -54,6 +90,13 @@
         <p>You clicked all the dots.</p>
         <button onclick="restartGame()">Play Again</button>
     </div>
+    <div id="lostScreen">
+        <p>Time's Up!</p>
+        <p>You didn't click all the dots.</p>
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+    <audio id="backgroundSound" src="https://freesound.org/data/previews/795/795724_1023605-lq.mp3" loop></audio>
+    <audio id="gunshotSound" src="https://freesound.org/data/previews/520/520561_1023605-lq.mp3"></audio>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -66,10 +109,22 @@
         let messageElement = document.getElementById('message');
         let timerElement = document.getElementById('timer');
         let victoryScreen = document.getElementById('victoryScreen');
+        let lostScreen = document.getElementById('lostScreen');
         let nicknameScreen = document.getElementById('nicknameScreen');
         let nickname = '';
         let timeLeft = 60;
         let timerInterval;
+        const backgroundSound = document.getElementById('backgroundSound');
+        const gunshotSound = document.getElementById('gunshotSound');
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
 
         function drawCircle(x, y, radius, color) {
             ctx.beginPath();
@@ -84,7 +139,8 @@
             const radius = Math.random() * 10 + 5;
             const x = Math.random() * canvas.width;
             const y = Math.random() * canvas.height;
-            dots.push({ x, y, radius, color: 'white' });
+            const color = getRandomColor();
+            dots.push({ x, y, radius, color });
         }
 
         function update() {
@@ -113,7 +169,10 @@
                     if (dots.length === 0) {
                         clearInterval(timerInterval);
                         victoryScreen.style.display = 'block';
+                        backgroundSound.pause();
                     }
+                    gunshotSound.currentTime = 0;
+                    gunshotSound.play();
                 }
             });
         });
@@ -124,8 +183,8 @@
                 timerElement.textContent = `Time left: ${timeLeft} seconds`;
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    alert('Time is up!');
-                    restartGame();
+                    lostScreen.style.display = 'block';
+                    backgroundSound.pause();
                 }
             }, 1000);
         }
@@ -146,15 +205,19 @@
                 spawnDot();
             }
             update();
+            backgroundSound.play();
         }
 
         function restartGame() {
             dots.length = 0;
             victoryScreen.style.display = 'none';
+            lostScreen.style.display = 'none';
             canvas.style.display = 'none';
             timerElement.style.display = 'none';
             nicknameScreen.style.display = 'block';
             clearInterval(timerInterval);
+            backgroundSound.pause();
+            backgroundSound.currentTime = 0;
         }
 
         // Initial setup
