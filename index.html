@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIOT Aim Training</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #gameCanvas {
+            background: #000;
+        }
+        #nicknameScreen, #victoryScreen {
+            display: none;
+            text-align: center;
+        }
+        #message {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+        }
+        #timer {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="nicknameScreen">
+        <h1>Enter your nickname:</h1>
+        <input type="text" id="nicknameInput" placeholder="Nickname">
+        <button onclick="startGame()">Start Game</button>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="message"></div>
+    <div id="timer"></div>
+    <div id="victoryScreen">
+        <p>Victory!</p>
+        <p>You clicked all the dots.</p>
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const dots = [];
+        const totalDots = 20;
+        const messages = ['Good job, {nickname}!', 'Impressive, {nickname}!', 'Nice shot, {nickname}!', 'Keep it up, {nickname}!', 'Awesome, {nickname}!'];
+        let messageElement = document.getElementById('message');
+        let timerElement = document.getElementById('timer');
+        let victoryScreen = document.getElementById('victoryScreen');
+        let nicknameScreen = document.getElementById('nicknameScreen');
+        let nickname = '';
+        let timeLeft = 60;
+        let timerInterval;
+
+        function drawCircle(x, y, radius, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function spawnDot() {
+            if (dots.length >= totalDots) return;
+            const radius = Math.random() * 10 + 5;
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            dots.push({ x, y, radius, color: 'white' });
+        }
+
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            dots.forEach((dot, index) => {
+                drawCircle(dot.x, dot.y, dot.radius, dot.color);
+            });
+            requestAnimationFrame(update);
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            dots.forEach((dot, index) => {
+                const dx = clickX - dot.x;
+                const dy = clickY - dot.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < dot.radius) {
+                    dots.splice(index, 1);
+                    const randomMessage = messages[Math.floor(Math.random() * messages.length)].replace('{nickname}', nickname);
+                    messageElement.textContent = randomMessage;
+                    setTimeout(() => {
+                        messageElement.textContent = '';
+                    }, 1000);
+                    if (dots.length === 0) {
+                        clearInterval(timerInterval);
+                        victoryScreen.style.display = 'block';
+                    }
+                }
+            });
+        });
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = `Time left: ${timeLeft} seconds`;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    alert('Time is up!');
+                    restartGame();
+                }
+            }, 1000);
+        }
+
+        function startGame() {
+            nickname = document.getElementById('nicknameInput').value;
+            if (nickname.trim() === '') {
+                alert('Please enter a nickname.');
+                return;
+            }
+            nicknameScreen.style.display = 'none';
+            canvas.style.display = 'block';
+            timerElement.style.display = 'block';
+            timeLeft = 60;
+            startTimer();
+            dots.length = 0;
+            for (let i = 0; i < totalDots; i++) {
+                spawnDot();
+            }
+            update();
+        }
+
+        function restartGame() {
+            dots.length = 0;
+            victoryScreen.style.display = 'none';
+            canvas.style.display = 'none';
+            timerElement.style.display = 'none';
+            nicknameScreen.style.display = 'block';
+            clearInterval(timerInterval);
+        }
+
+        // Initial setup
+        nicknameScreen.style.display = 'block';
+    </script>
+</body>
+</html>
